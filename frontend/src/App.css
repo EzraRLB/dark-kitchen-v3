@@ -29,6 +29,7 @@
 .logo {
   width: 70px;
   height: auto;
+  border-radius: 15px;
 }
 
 /* Títulos */

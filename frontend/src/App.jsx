@@ -16,7 +16,7 @@ function App() {
       <div className="login-box">
         {/*logos */}
         <div className="logo-container">
-          <img src="" alt="" />
+          <img className="logo" src="../public/images/img-logo-uloop.jpeg" alt="" />
           <img src="" alt="" />
         </div>
 
@@ -46,7 +46,7 @@ function App() {
 
           <div className="options">
             <label>
-              <input className="checkbox" /> Recuerdame
+              <input type="checkbox" className="checkbox" /> Recuerdame
             </label>
             <a href="#" className="forgot">
               Olvidaste tu contraseña?
