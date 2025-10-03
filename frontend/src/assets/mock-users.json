@@ -1,0 +1,7 @@
+[
+  { "id": 1, "name": "Ana López", "email": "ana@darkkitchen.local", "role": "Cocina" },
+  { "id": 2, "name": "Carlos Díaz", "email": "carlos@darkkitchen.local", "role": "Mesero" },
+  { "id": 3, "name": "María Pérez", "email": "maria@darkkitchen.local", "role": "Repartidor" },
+  { "id": 4, "name": "Juan García", "email": "juan@darkkitchen.local", "role": "Caja" },
+  { "id": 5, "name": "Sofía Hernández", "email": "sofia@darkkitchen.local", "role": "Cocina" }
+]

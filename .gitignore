@@ -1,0 +1,9 @@
+﻿node_modules/
+dist/
+.DS_Store
+.env
+*.log
+db.sqlite3
+backend/__pycache__/
+frontend/.vite/
+*.local
