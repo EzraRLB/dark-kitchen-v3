@@ -9,6 +9,7 @@ const AdminScreen = ({ user, onLogout }) => {
         <h2 className="brand-title">Admin Panel</h2>
         <nav className="sidebar-nav">
           <a href="#" className="nav-link active">Gestión de Equipo</a>
+          <a href="#" className="nav-link">Ingredientes</a>
           <a href="#" className="nav-link">Inventario</a>
           <a href="#" className="nav-link">Reportes</a>
         </nav>
