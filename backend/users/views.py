@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
+from rest_framework import generics, permissions
+from .serializers import UserSerializer
 
 class AdminTokenObtainPairView(TokenObtainPairView):
     pass
@@ -34,3 +36,17 @@ class PinLoginView(APIView):
             })
         
         return Response({'error': 'PIN inválido'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+# --- API para gestión de equipo (usada por el frontend) ---
+class TeamUserList(generics.ListCreateAPIView):
+    """Listado de usuarios del equipo y creación (si se desea)."""
+    queryset = User.objects.all().order_by('id')
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class TeamUserDetail(generics.RetrieveUpdateAPIView):
+    """Recuperar y actualizar (PATCH) un usuario individualmente."""
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]

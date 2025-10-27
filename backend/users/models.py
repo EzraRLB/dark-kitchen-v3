@@ -13,6 +13,8 @@ class User(AbstractUser):
     user_role = models.CharField(max_length=20, choices=USER_ROLE_CHOICES, blank=True)
     user_pin = models.CharField(max_length=128, help_text="Este campo es solo para establecer/cambiar el PIN. No se almacena en texto plano.")
     user_alias = models.CharField(max_length=50, blank=True, null=True)
+    # Unidad/estación dentro de la cocina (ej: cocina, caja, reparto, barra, ensamble)
+    unit = models.CharField(max_length=50, blank=True, null=True)
     email = models.EmailField(blank=True)
     
     def save(self, *args, **kwargs):
