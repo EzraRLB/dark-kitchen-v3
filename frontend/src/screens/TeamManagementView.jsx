@@ -14,32 +14,48 @@ const KITCHEN_UNITS = [
 
 // --- FUNCIÓN CLAVE: Obtiene el token y lo prepara para la cabecera ---
 const getAuthHeaders = () => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-        console.error("No se encontró token de acceso. Por favor, inicie sesión de nuevo.");
-        return {};
-    }
-    return { 
-        headers: { 
-            Authorization: `Bearer ${token}` 
-        } 
-    };
+  // intenta varios nombres porque no sabemos con cuál lo guardaste
+  const token =
+    localStorage.getItem("accessToken") ||   // lo que esperaba tu helper
+    localStorage.getItem("access") ||        // lo que sí te manda el backend
+    localStorage.getItem("token");           // por si acaso
+
+  if (!token) {
+    console.warn("No hay token en localStorage");
+    return {};
+  }
+
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  };
 };
+
 
 // --- API Helpers que ahora usan el token ---
 async function apiFetchUsers() {
   const { data } = await axios.get('http://127.0.0.1:8000/api/users/team/', getAuthHeaders());
-  // Mapeamos los nombres para que coincidan con lo que espera el frontend
   return data.map(u => ({
-      id: u.id,
-      name: `${u.first_name} ${u.last_name}`.trim() || u.username,
-      email: u.email,
-      unit: u.unit,
+    id: u.id,
+    name: `${u.first_name} ${u.last_name}`.trim() || u.username,
+    email: u.email,
+    unit: u.unit,
   }));
 }
 
 async function apiUpdateUser(userId, payload) {
   return await axios.patch(`http://127.0.0.1:8000/api/users/team/${userId}/`, payload, getAuthHeaders());
+}
+
+// 👇 NUEVO: crear usuario
+async function apiCreateUser(payload) {
+  // aquí asumo que tu endpoint de lista acepta POST
+  return await axios.post(
+    'http://127.0.0.1:8000/api/users/team/',
+    payload,
+    getAuthHeaders()
+  );
 }
 
 // ---------- Vista Principal (con manejo de errores) ----------
@@ -53,17 +69,28 @@ export default function TeamManagementView() {
   const [pinModal, setPinModal] = useState({ open: false, user: null, pin: "" });
   const [unitModal, setUnitModal] = useState({ open: false, user: null, unit: "" });
 
+  // 👇 NUEVO modal de añadir
+  const [addModal, setAddModal] = useState({
+    open: false,
+    first_name: '',
+    last_name: '',
+    email: '',
+    unit: '',
+    username: '',
+    user_pin: ''
+  });
+
   useEffect(() => {
     apiFetchUsers()
-        .then(data => {
-            setUsers(data);
-            setLoading(false);
-        })
-        .catch(err => {
-            console.error("Error al obtener usuarios:", err);
-            setError("No se pudo cargar la lista de usuarios. Es posible que tu sesión haya expirado.");
-            setLoading(false);
-        });
+      .then(data => {
+        setUsers(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error al obtener usuarios:", err);
+        setError("No se pudo cargar la lista de usuarios. Es posible que tu sesión haya expirado.");
+        setLoading(false);
+      });
   }, []);
 
   const filteredUsers = useMemo(() => {
@@ -91,17 +118,90 @@ export default function TeamManagementView() {
     setUnitModal({ open: false, user: null, unit: "" });
   };
 
+  //  NUEVO: guardar usuario
+  const handleCreateUser = async () => {
+  if (!addModal.email) {
+    alert("El email es obligatorio.");
+    return;
+  }
+
+  try {
+    const payload = {
+        first_name: addModal.first_name,
+        last_name: addModal.last_name,
+        email: addModal.email,
+        unit: addModal.unit || null,
+        username: addModal.username || addModal.email.split("@")[0],
+        user_pin: addModal.user_pin || null,
+        // 👇 por si el backend pide password, le mandamos uno
+        password: addModal.user_pin || "12345678"
+    };
+
+    const { data: created } = await apiCreateUser(payload);
+
+    const newRow = {
+      id: created.id,
+      name: `${created.first_name || ''} ${created.last_name || ''}`.trim() || created.username,
+      email: created.email,
+      unit: created.unit,
+    };
+
+    setUsers(prev => [...prev, newRow]);
+
+    setAddModal({
+      open: false,
+      first_name: '',
+      last_name: '',
+      email: '',
+      unit: '',
+      username: '',
+      user_pin: ''
+    });
+  } catch (err) {
+    console.error("Error creando usuario:", err);
+    // 👇 esto es lo que te va a decir EXACTAMENTE qué quiere el backend
+    const msg =
+      err?.response?.data
+        ? JSON.stringify(err.response.data, null, 2)
+        : err.message;
+    alert("No se pudo crear el usuario:\n" + msg);
+  }
+};
+
+
   return (
     <div className="admin-container">
-      {/* ... (el JSX de la toolbar y los modales no cambia) ... */}
+      {/* TOOLBAR */}
       <div className="admin-toolbar">
-        <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por nombre o email..." className="search-input" />
-        <select value={unitFilter} onChange={(e) => setUnitFilter(e.target.value)} className="filter-select">
-          <option value="todos">Todas las Unidades</option>
-          {KITCHEN_UNITS.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
-        </select>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar por nombre o email..."
+          className="search-input"
+        />
+
+        <div className="toolbar-right">
+          <select
+            value={unitFilter}
+            onChange={(e) => setUnitFilter(e.target.value)}
+            className="filter-select"
+          >
+            <option value="todos">Todas las Unidades</option>
+            {KITCHEN_UNITS.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
+          </select>
+
+          {/* 👇 NUEVO BOTÓN */}
+          <button
+            className="add-user-btn"
+            onClick={() => setAddModal(m => ({ ...m, open: true }))}
+          >
+            + Añadir usuario
+          </button>
+        </div>
       </div>
 
+      {/* TABLA */}
       <div className="table-container">
         <table>
           <thead>
@@ -117,7 +217,7 @@ export default function TeamManagementView() {
             {loading && <tr><td colSpan="5" className="status-cell">Cargando usuarios...</td></tr>}
             {error && <tr><td colSpan="5" className="status-cell error-cell">{error}</td></tr>}
             {!loading && !error && filteredUsers.length === 0 && (
-                <tr><td colSpan="5" className="status-cell">No se encontraron usuarios.</td></tr>
+              <tr><td colSpan="5" className="status-cell">No se encontraron usuarios.</td></tr>
             )}
             {!loading && !error && filteredUsers.map(user => (
               <tr key={user.id}>
@@ -135,17 +235,101 @@ export default function TeamManagementView() {
         </table>
       </div>
 
-      {/* ... (Modales) ... */}
-      <Modal open={pinModal.open} title={`Cambiar PIN de ${pinModal.user?.name}`} onClose={() => setPinModal({ open: false, user: null, pin: '' })} onConfirm={handleSavePin}>
+      {/* MODAL PIN */}
+      <Modal
+        open={pinModal.open}
+        title={`Cambiar PIN de ${pinModal.user?.name}`}
+        onClose={() => setPinModal({ open: false, user: null, pin: '' })}
+        onConfirm={handleSavePin}
+      >
         <label>Nuevo PIN (4-6 dígitos)</label>
-        <input type="text" value={pinModal.pin} onChange={e => setPinModal(s => ({ ...s, pin: e.target.value.replace(/\D/g, "") }))} maxLength={6} className="modal-input" />
+        <input
+          type="text"
+          value={pinModal.pin}
+          onChange={e => setPinModal(s => ({ ...s, pin: e.target.value.replace(/\D/g, "") }))}
+          maxLength={6}
+          className="modal-input"
+        />
       </Modal>
 
-      <Modal open={unitModal.open} title={`Cambiar Unidad de ${unitModal.user?.name}`} onClose={() => setUnitModal({ open: false, user: null, unit: '' })} onConfirm={handleSaveUnit}>
+      {/* MODAL UNIDAD */}
+      <Modal
+        open={unitModal.open}
+        title={`Cambiar Unidad de ${unitModal.user?.name}`}
+        onClose={() => setUnitModal({ open: false, user: null, unit: '' })}
+        onConfirm={handleSaveUnit}
+      >
         <label>Unidad de Cocina</label>
-        <select value={unitModal.unit} onChange={e => setUnitModal(s => ({ ...s, unit: e.target.value }))} className="modal-input">
+        <select
+          value={unitModal.unit}
+          onChange={e => setUnitModal(s => ({ ...s, unit: e.target.value }))}
+          className="modal-input"
+        >
           {KITCHEN_UNITS.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
         </select>
+      </Modal>
+
+      {/* 👇 MODAL NUEVO USUARIO */}
+      <Modal
+        open={addModal.open}
+        title="Añadir nuevo usuario"
+        onClose={() => setAddModal({
+          open: false,
+          first_name: '',
+          last_name: '',
+          email: '',
+          unit: '',
+          username: '',
+          user_pin: ''
+        })}
+        onConfirm={handleCreateUser}
+      >
+        <label>Nombre</label>
+        <input
+          className="modal-input"
+          value={addModal.first_name}
+          onChange={e => setAddModal(s => ({ ...s, first_name: e.target.value }))}
+        />
+
+        <label>Apellidos</label>
+        <input
+          className="modal-input"
+          value={addModal.last_name}
+          onChange={e => setAddModal(s => ({ ...s, last_name: e.target.value }))}
+        />
+
+        <label>Email</label>
+        <input
+          className="modal-input"
+          type="email"
+          value={addModal.email}
+          onChange={e => setAddModal(s => ({ ...s, email: e.target.value }))}
+        />
+
+        <label>Unidad</label>
+        <select
+          className="modal-input"
+          value={addModal.unit}
+          onChange={e => setAddModal(s => ({ ...s, unit: e.target.value }))}
+        >
+          <option value="">-- Selecciona --</option>
+          {KITCHEN_UNITS.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
+        </select>
+
+        <label>Username (opcional)</label>
+        <input
+          className="modal-input"
+          value={addModal.username}
+          onChange={e => setAddModal(s => ({ ...s, username: e.target.value }))}
+        />
+
+        <label>PIN (opcional)</label>
+        <input
+          className="modal-input"
+          maxLength={6}
+          value={addModal.user_pin}
+          onChange={e => setAddModal(s => ({ ...s, user_pin: e.target.value.replace(/\D/g, "") }))}
+        />
       </Modal>
     </div>
   );

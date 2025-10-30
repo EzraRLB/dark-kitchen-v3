@@ -1,13 +1,16 @@
-# backend/users/urls.py
-
+# users/urls.py
 from django.urls import path
-from .views import PinLoginView, AdminTokenObtainPairView, TeamUserList, TeamUserDetail
+from .views import (
+    PinLoginView,
+    AdminTokenObtainPairView,
+    TeamUserListCreateView,
+    TeamUserDetailView,
+)
 
 urlpatterns = [
-    path('token/pin/', PinLoginView.as_view(), name='token_obtain_pin'),
-    path('token/admin/', AdminTokenObtainPairView.as_view(), name='token_obtain_admin'),
+    path("token/pin/", PinLoginView.as_view(), name="token-pin"),
+    path("token/admin/", AdminTokenObtainPairView.as_view(), name="token-admin"),
 
-    # Endpoints used by the frontend team management view
-    path('team/', TeamUserList.as_view(), name='team_list'),
-    path('team/<int:pk>/', TeamUserDetail.as_view(), name='team_detail'),
+    path("team/", TeamUserListCreateView.as_view(), name="team-users"),
+    path("team/<int:pk>/", TeamUserDetailView.as_view(), name="team-users-detail"),
 ]

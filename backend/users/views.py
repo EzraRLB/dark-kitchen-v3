@@ -1,52 +1,46 @@
-from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import status, generics, permissions
+from rest_framework_simplejwt.views import TokenObtainPairView
+from django.utils.crypto import get_random_string
+
 from .models import User
-from rest_framework import generics, permissions
-from .serializers import UserSerializer
+from .serializers import PinLoginSerializer, TeamUserSerializer
+
+
+class PinLoginView(APIView):
+    def post(self, request, *args, **kwargs):
+        data = request.data.copy()
+        # 👇 tu frontend manda "pin", aquí lo traducimos
+        if "user_pin" not in data and "pin" in data:
+            data["user_pin"] = data["pin"]
+
+        serializer = PinLoginSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
 
 class AdminTokenObtainPairView(TokenObtainPairView):
     pass
 
-class PinLoginView(APIView):
-    def post(self, request, *args, **kwargs):
-        pin = request.data.get('pin')
 
-        if not pin:
-            return Response({'error': 'Se requiere "pin"'}, status=status.HTTP_400_BAD_REQUEST)
-
-        user_found = None
-        for user in User.objects.all():
-            if user.check_password(pin):
-                user_found = user
-                break
-
-        if user_found:
-            refresh = RefreshToken.for_user(user_found)
-            return Response({
-                'access': str(refresh.access_token),
-                'user': {
-                    'id': user_found.id,
-                    'username': user_found.username,
-                    'user_alias': user_found.user_alias,
-                    'user_role': user_found.user_role,
-                }
-            })
-        
-        return Response({'error': 'PIN inválido'}, status=status.HTTP_401_UNAUTHORIZED)
-
-
-# --- API para gestión de equipo (usada por el frontend) ---
-class TeamUserList(generics.ListCreateAPIView):
-    """Listado de usuarios del equipo y creación (si se desea)."""
-    queryset = User.objects.all().order_by('id')
-    serializer_class = UserSerializer
+class TeamUserListCreateView(generics.ListCreateAPIView):
+    queryset = User.objects.all().order_by("id")
+    serializer_class = TeamUserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-class TeamUserDetail(generics.RetrieveUpdateAPIView):
-    """Recuperar y actualizar (PATCH) un usuario individualmente."""
+    def perform_create(self, serializer):
+        password = (
+            self.request.data.get("password")
+            or self.request.data.get("user_pin")
+            or get_random_string(10)
+        )
+        user = serializer.save()
+        user.set_password(password)
+        user.save()
+
+
+class TeamUserDetailView(generics.RetrieveUpdateAPIView):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = TeamUserSerializer
     permission_classes = [permissions.IsAuthenticated]

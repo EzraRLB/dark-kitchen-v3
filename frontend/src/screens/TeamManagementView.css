@@ -94,3 +94,33 @@ th {
   color: #e74c3c;
   font-weight: 500;
 }
+.admin-toolbar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  align-items: center;
+  justify-content: space-between; /* 👈 para que el botón quede a la derecha */
+}
+
+.toolbar-right {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.add-user-btn {
+  background-color: #ff7a1a;
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.add-user-btn:hover {
+  background-color: #ff6a00;
+}
