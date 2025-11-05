@@ -1,8 +1,0 @@
-.order-card { background: #343a40; border-radius: 8px; margin-bottom: 1rem; border-left: 8px solid; }
-.estado-nuevo { border-color: #ffc107; }
-.estado-preparando { border-color: #007bff; }
-.estado-listo { border-color: #28a745; }
-.order-header { display: flex; justify-content: space-between; padding: 0.8rem 1rem; font-weight: bold; font-size: 1.2rem; }
-.order-items { list-style: none; padding: 0 1rem; margin: 0; }
-.order-items li { padding: 0.6rem 0; border-bottom: 1px solid #495057; }
-.order-action { width: 100%; padding: 1rem; font-size: 1.1rem; border: none; background-color: #495057; color: white; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; cursor: pointer; margin-top: 1rem; }
