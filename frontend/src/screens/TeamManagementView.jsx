@@ -4,21 +4,20 @@ import Modal from '../components/Modal';
 import './TeamManagementView.css';
 
 // ---------- Configuración ----------
-const KITCHEN_UNITS = [
+const USER_ROLES = [
   { id: "cocina", label: "Cocina" },
-  { id: "caja", label: "Caja" },
   { id: "reparto", label: "Reparto" },
-  { id: "barra", label: "Barra" },
   { id: "ensamble", label: "Ensamble" },
+  { id: "supervisor", label: "Supervisor" },
+  { id: "admin", label: "Administrador" },
 ];
 
-// --- FUNCIÓN CLAVE: Obtiene el token y lo prepara para la cabecera ---
+// --- FUNCIÓN CLAVE: Obtiene el token ---
 const getAuthHeaders = () => {
-  // intenta varios nombres porque no sabemos con cuál lo guardaste
   const token =
-    localStorage.getItem("accessToken") ||   // lo que esperaba tu helper
-    localStorage.getItem("access") ||        // lo que sí te manda el backend
-    localStorage.getItem("token");           // por si acaso
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("access") ||
+    localStorage.getItem("token");
 
   if (!token) {
     console.warn("No hay token en localStorage");
@@ -32,146 +31,191 @@ const getAuthHeaders = () => {
   };
 };
 
-
-// --- API Helpers que ahora usan el token ---
+// --- API Helpers ---
 async function apiFetchUsers() {
   const { data } = await axios.get('http://127.0.0.1:8000/api/users/team/', getAuthHeaders());
-  return data.map(u => ({
-    id: u.id,
-    name: `${u.first_name} ${u.last_name}`.trim() || u.username,
-    email: u.email,
-    unit: u.unit,
-  }));
+  return data.map(u => {
+    const rawRole = (u.user_role || (u.is_staff ? 'admin' : '')).toString().toLowerCase();
+    const is_admin = u.is_superuser || ['admin', 'supervisor'].includes(rawRole);
+    return {
+      id: u.id,
+      name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || u.user_alias,
+      email: u.email || '',
+      role: rawRole,
+      is_admin,
+    };
+  });
 }
 
+// (apiUpdateUser se queda igual, aunque ya no lo usamos para el PIN)
 async function apiUpdateUser(userId, payload) {
   return await axios.patch(`http://127.0.0.1:8000/api/users/team/${userId}/`, payload, getAuthHeaders());
 }
 
-// 👇 NUEVO: crear usuario
 async function apiCreateUser(payload) {
-  // aquí asumo que tu endpoint de lista acepta POST
-  return await axios.post(
-    'http://127.0.0.1:8000/api/users/team/',
-    payload,
-    getAuthHeaders()
-  );
+  return await axios.post('http://127.0.0.1:8000/api/users/team/', payload, getAuthHeaders());
 }
 
-// ---------- Vista Principal (con manejo de errores) ----------
+async function apiDeleteUser(userId, adminPassword = null) {
+  const config = getAuthHeaders();
+  if (adminPassword) {
+    config.data = { admin_password: adminPassword };
+  }
+  return await axios.delete(`http://127.0.0.1:8000/api/users/team/${userId}/`, config);
+}
+
+// 👇 --- NUEVA FUNCIÓN API PARA RESTABLECER EL PIN ---
+async function apiResetPin(userId, adminPassword) {
+  const config = getAuthHeaders();
+  const payload = { admin_password: adminPassword };
+  // Llamamos al nuevo endpoint que creamos en urls.py
+  return await axios.post(`http://127.0.0.1:8000/api/users/team/${userId}/reset-pin/`, payload, config);
+}
+
+
+// ---------- Vista Principal ----------
 export default function TeamManagementView() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [query, setQuery] = useState("");
-  const [unitFilter, setUnitFilter] = useState("todos");
+  const [roleFilter, setRoleFilter] = useState("todos");
 
-  const [pinModal, setPinModal] = useState({ open: false, user: null, pin: "" });
-  const [unitModal, setUnitModal] = useState({ open: false, user: null, unit: "" });
+  // 👇 --- ELIMINAMOS EL ESTADO DEL MODAL DE PIN ---
+  // const [pinModal, setPinModal] = useState({ open: false, user: null, pin: "" });
+  
+  // (El modal de 'unidad' ya lo habíamos quitado, lo cual es correcto)
 
-  // 👇 NUEVO modal de añadir
   const [addModal, setAddModal] = useState({
     open: false,
     first_name: '',
     last_name: '',
     email: '',
-    unit: '',
     username: '',
-    user_pin: ''
+    user_role: 'cocina'
   });
+  
+  const resetAddModal = () => {
+    setAddModal({
+      open: false,
+      first_name: '',
+      last_name: '',
+      email: '',
+      username: '',
+      user_role: 'cocina'
+    });
+  };
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await apiFetchUsers();
+      setUsers(data);
+    } catch (err) {
+      console.error("Error al obtener usuarios:", err);
+      setError("No se pudo cargar la lista de usuarios. Es posible que tu sesión haya expirado.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    apiFetchUsers()
-      .then(data => {
-        setUsers(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Error al obtener usuarios:", err);
-        setError("No se pudo cargar la lista de usuarios. Es posible que tu sesión haya expirado.");
-        setLoading(false);
-      });
+    fetchUsers();
   }, []);
 
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
       const search = query.toLowerCase();
       const matchesText = !search || user.name.toLowerCase().includes(search) || user.email.toLowerCase().includes(search);
-      const matchesUnit = unitFilter === "todos" || user.unit === unitFilter;
-      return matchesText && matchesUnit;
+      const matchesRole = roleFilter === "todos" || user.role === roleFilter;
+      return matchesText && matchesRole;
     });
-  }, [users, query, unitFilter]);
+  }, [users, query, roleFilter]);
 
-  const unitLabel = (id) => KITCHEN_UNITS.find(k => k.id === id)?.label || id;
+  const roleLabel = (id) => USER_ROLES.find(r => r.id === id)?.label || id;
 
-  const handleSavePin = async () => {
-    const { user, pin } = pinModal;
-    if (!/^\d{4,6}$/.test(pin)) return alert("El PIN debe ser de 4 a 6 dígitos.");
-    await apiUpdateUser(user.id, { user_pin: pin });
-    setPinModal({ open: false, user: null, pin: "" });
+  // 👇 --- REESCRIBIMOS LA LÓGICA DE 'CAMBIAR PIN' ---
+  const handleResetPin = async (user) => {
+    if (!user) return;
+
+    // 1. Pedir la contraseña del admin (igual que al borrar)
+    const adminPassword = window.prompt(
+      `🔒 ACCIÓN SEGURA 🔒\nVas a restablecer el PIN para "${user.name}".\n\nPor favor, ingresa TU PROPIA contraseña de administrador para confirmar:`
+    );
+
+    // 2. Si el admin cancela, no hacemos nada
+    if (!adminPassword) {
+      return;
+    }
+
+    // 3. Llamar a la nueva API
+    try {
+      const response = await apiResetPin(user.id, adminPassword);
+      // Mostramos el mensaje de éxito del backend
+      alert(response.data.success || "PIN restablecido y enviado.");
+    } catch (err) {
+      console.error("Error al restablecer PIN:", err);
+      // Mostramos el mensaje de error del backend
+      const msg = err?.response?.data?.error || "No se pudo restablecer el PIN.";
+      alert("Error: " + msg);
+    }
   };
 
-  const handleSaveUnit = async () => {
-    const { user, unit } = unitModal;
-    await apiUpdateUser(user.id, { unit });
-    setUsers(prev => prev.map(u => (u.id === user.id ? { ...u, unit } : u)));
-    setUnitModal({ open: false, user: null, unit: "" });
-  };
+  // (handleSaveUnit ya no existe, lo cual es correcto)
 
-  //  NUEVO: guardar usuario
   const handleCreateUser = async () => {
-  if (!addModal.email) {
-    alert("El email es obligatorio.");
-    return;
-  }
-
-  try {
-    const payload = {
-        first_name: addModal.first_name,
-        last_name: addModal.last_name,
+    // ... (esta función se queda igual que antes) ...
+    if (!addModal.email || !addModal.user_role) {
+      alert("El email y el rol son obligatorios.");
+      return;
+    }
+    try {
+      const payload = {
+        first_name: addModal.first_name || '',
+        last_name: addModal.last_name || '',
         email: addModal.email,
-        unit: addModal.unit || null,
         username: addModal.username || addModal.email.split("@")[0],
-        user_pin: addModal.user_pin || null,
-        // 👇 por si el backend pide password, le mandamos uno
-        password: addModal.user_pin || "12345678"
-    };
+        user_role: addModal.user_role,
+      };
+      await apiCreateUser(payload);
+      await fetchUsers();
+      resetAddModal();
+      alert('¡Usuario creado! Se ha enviado un correo con el PIN de acceso.');
+    } catch (err) {
+      console.error("Error creando usuario:", err);
+      const msg = err?.response?.data ? JSON.stringify(err.response.data, null, 2) : err.message;
+      alert("No se pudo crear el usuario:\n" + msg);
+    }
+  };
 
-    const { data: created } = await apiCreateUser(payload);
-
-    const newRow = {
-      id: created.id,
-      name: `${created.first_name || ''} ${created.last_name || ''}`.trim() || created.username,
-      email: created.email,
-      unit: created.unit,
-    };
-
-    setUsers(prev => [...prev, newRow]);
-
-    setAddModal({
-      open: false,
-      first_name: '',
-      last_name: '',
-      email: '',
-      unit: '',
-      username: '',
-      user_pin: ''
-    });
-  } catch (err) {
-    console.error("Error creando usuario:", err);
-    // 👇 esto es lo que te va a decir EXACTAMENTE qué quiere el backend
-    const msg =
-      err?.response?.data
-        ? JSON.stringify(err.response.data, null, 2)
-        : err.message;
-    alert("No se pudo crear el usuario:\n" + msg);
-  }
-};
-
+  const handleDeleteUser = async (user) => {
+    // ... (esta función se queda igual que antes) ...
+    if (!user) return;
+    let adminPassword = null;
+    if (user.is_admin) {
+      adminPassword = window.prompt(
+        "⚠️ ALERTA ⚠️\nEstás a punto de eliminar a un administrador (" + user.name + ").\n\nPor favor, ingresa TU PROPIA contraseña de administrador para confirmar:"
+      );
+      if (!adminPassword) return; 
+    } else {
+      const ok = window.confirm(`¿Estás seguro de eliminar a "${user.name}"?`);
+      if (!ok) return;
+    }
+    try {
+      await apiDeleteUser(user.id, adminPassword);
+      setUsers(prev => prev.filter(u => u.id !== user.id));
+      alert("Usuario eliminado correctamente.");
+    } catch (err) {
+      console.error("Error borrando usuario:", err);
+      const msg = err?.response?.data?.error || "No se pudo eliminar el usuario.";
+      alert("Error: " + msg);
+    }
+  };
 
   return (
     <div className="admin-container">
-      {/* TOOLBAR */}
+      {/* TOOLBAR (sin cambios) */}
       <div className="admin-toolbar">
         <input
           type="text"
@@ -180,18 +224,15 @@ export default function TeamManagementView() {
           placeholder="Buscar por nombre o email..."
           className="search-input"
         />
-
         <div className="toolbar-right">
           <select
-            value={unitFilter}
-            onChange={(e) => setUnitFilter(e.target.value)}
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
             className="filter-select"
           >
-            <option value="todos">Todas las Unidades</option>
-            {KITCHEN_UNITS.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
+            <option value="todos">Todos los Roles</option>
+            {USER_ROLES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
           </select>
-
-          {/* 👇 NUEVO BOTÓN */}
           <button
             className="add-user-btn"
             onClick={() => setAddModal(m => ({ ...m, open: true }))}
@@ -201,7 +242,7 @@ export default function TeamManagementView() {
         </div>
       </div>
 
-      {/* TABLA */}
+      {/* TABLA (Botón de PIN actualizado) */}
       <div className="table-container">
         <table>
           <thead>
@@ -209,7 +250,7 @@ export default function TeamManagementView() {
               <th>ID</th>
               <th>Nombre</th>
               <th>Email</th>
-              <th>Unidad</th>
+              <th>Rol</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -224,10 +265,22 @@ export default function TeamManagementView() {
                 <td>{user.id}</td>
                 <td>{user.name}</td>
                 <td>{user.email}</td>
-                <td><span className="unit-pill">{unitLabel(user.unit)}</span></td>
                 <td>
-                  <button className="action-btn" onClick={() => setPinModal({ open: true, user, pin: '' })}>Cambiar PIN</button>
-                  <button className="action-btn" onClick={() => setUnitModal({ open: true, user, unit: user.unit })}>Cambiar Unidad</button>
+                  <span className="unit-pill" data-role={user.role}>
+                    {roleLabel(user.role)}
+                  </span>
+                </td>
+                <td>
+                  {/* 👇 --- ONCLICK ACTUALIZADO --- */}
+                  <button className="action-btn" onClick={() => handleResetPin(user)}>
+                    Restablecer PIN
+                  </button>
+                  
+                  {user.is_admin ? (
+                     <button className="action-btn-red danger" onClick={() => handleDeleteUser(user)}>Eliminar (Admin)</button>
+                  ) : (
+                    <button className="action-btn-red danger" onClick={() => handleDeleteUser(user)}>Eliminar</button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -235,53 +288,15 @@ export default function TeamManagementView() {
         </table>
       </div>
 
-      {/* MODAL PIN */}
-      <Modal
-        open={pinModal.open}
-        title={`Cambiar PIN de ${pinModal.user?.name}`}
-        onClose={() => setPinModal({ open: false, user: null, pin: '' })}
-        onConfirm={handleSavePin}
-      >
-        <label>Nuevo PIN (4-6 dígitos)</label>
-        <input
-          type="text"
-          value={pinModal.pin}
-          onChange={e => setPinModal(s => ({ ...s, pin: e.target.value.replace(/\D/g, "") }))}
-          maxLength={6}
-          className="modal-input"
-        />
-      </Modal>
+      {/* 👇 --- MODAL DE PIN ELIMINADO --- */}
+      {/* (Ya no existe el <Modal open={pinModal.open} ... >) */}
 
-      {/* MODAL UNIDAD */}
-      <Modal
-        open={unitModal.open}
-        title={`Cambiar Unidad de ${unitModal.user?.name}`}
-        onClose={() => setUnitModal({ open: false, user: null, unit: '' })}
-        onConfirm={handleSaveUnit}
-      >
-        <label>Unidad de Cocina</label>
-        <select
-          value={unitModal.unit}
-          onChange={e => setUnitModal(s => ({ ...s, unit: e.target.value }))}
-          className="modal-input"
-        >
-          {KITCHEN_UNITS.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
-        </select>
-      </Modal>
 
-      {/* 👇 MODAL NUEVO USUARIO */}
+      {/* MODAL NUEVO USUARIO (sin cambios) */}
       <Modal
         open={addModal.open}
         title="Añadir nuevo usuario"
-        onClose={() => setAddModal({
-          open: false,
-          first_name: '',
-          last_name: '',
-          email: '',
-          unit: '',
-          username: '',
-          user_pin: ''
-        })}
+        onClose={resetAddModal}
         onConfirm={handleCreateUser}
       >
         <label>Nombre</label>
@@ -290,45 +305,32 @@ export default function TeamManagementView() {
           value={addModal.first_name}
           onChange={e => setAddModal(s => ({ ...s, first_name: e.target.value }))}
         />
-
         <label>Apellidos</label>
         <input
           className="modal-input"
           value={addModal.last_name}
           onChange={e => setAddModal(s => ({ ...s, last_name: e.target.value }))}
         />
-
-        <label>Email</label>
+        <label>Email (Obligatorio)</label>
         <input
           className="modal-input"
           type="email"
           value={addModal.email}
           onChange={e => setAddModal(s => ({ ...s, email: e.target.value }))}
         />
-
-        <label>Unidad</label>
+        <label>Rol (Obligatorio)</label>
         <select
           className="modal-input"
-          value={addModal.unit}
-          onChange={e => setAddModal(s => ({ ...s, unit: e.target.value }))}
+          value={addModal.user_role}
+          onChange={e => setAddModal(s => ({ ...s, user_role: e.target.value }))}
         >
-          <option value="">-- Selecciona --</option>
-          {KITCHEN_UNITS.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
+          {USER_ROLES.map(role => <option key={role.id} value={role.id}>{role.label}</option>)}
         </select>
-
-        <label>Username (opcional)</label>
+        <label>Username (Opcional - si se deja vacío, usa el email)</label>
         <input
           className="modal-input"
           value={addModal.username}
           onChange={e => setAddModal(s => ({ ...s, username: e.target.value }))}
-        />
-
-        <label>PIN (opcional)</label>
-        <input
-          className="modal-input"
-          maxLength={6}
-          value={addModal.user_pin}
-          onChange={e => setAddModal(s => ({ ...s, user_pin: e.target.value.replace(/\D/g, "") }))}
         />
       </Modal>
     </div>

@@ -4,9 +4,10 @@ from django.contrib.auth.hashers import make_password
 
 class User(AbstractUser):
     USER_ROLE_CHOICES = [
-        ('cocinero', 'Cocinero'),
-        ('empacador', 'Empacador'),
-        ('supervisor', 'Supervisor'),
+        ('cocina', 'cocina'),
+        ('reparto', 'reparto'),
+        ('ensamble', 'ensamble'),
+        ('supervisor', 'supervisor'),
         ('admin', 'Administrador'),
     ]
     

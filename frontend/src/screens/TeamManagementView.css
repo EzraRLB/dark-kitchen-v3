@@ -1,32 +1,82 @@
+/* Contenedor principal de la vista (TeamManagementView) */
 .admin-container {
   padding: 2rem;
-  background-color: #f8f9fa;
+  /* Quitamos el fondo de aquí.
+    Ahora usará el fondo gris (#f4f4f5) de su componente padre 'AdminScreen.css'
+  */
 }
 
+/* --- Barra de Herramientas (Filtros, Búsqueda, Botón) --- */
 .admin-toolbar {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 1rem;
   margin-bottom: 2rem;
   padding: 1.5rem;
-  background: white;
+  background: white; /* <-- Fondo blanco (Tarjeta) */
   border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* <-- Sombra suave */
+  border: 1px solid var(--border-color);
 }
 
-.search-input, .filter-select {
+.search-input {
+  flex-grow: 1; /* Ocupa el espacio disponible */
   padding: 0.8rem 1rem;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 1rem;
+  background-color: #f8f9fa; /* Fondo ligero */
+}
+.search-input:focus {
+  background-color: white;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.25);
+  outline: none;
 }
 
-.search-input { flex-grow: 1; }
+/* Contenedor para los botones de la derecha */
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
 
+.filter-select {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: white;
+  cursor: pointer;
+}
+
+/* Botón de "Añadir usuario" (Naranja) */
+.add-user-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.8rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  white-space: nowrap; /* Evita que el texto se parta */
+}
+.add-user-btn:hover {
+  transform: scale(1.03);
+  filter: brightness(1.1);
+}
+
+
+/* --- Contenedor de la Tabla --- */
 .table-container {
-  background: white;
+  background: white; /* <-- Fondo blanco (Tarjeta) */
   border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* <-- Sombra suave */
+  border: 1px solid var(--border-color);
+  overflow: hidden; /* Para que los bordes redondeados corten la tabla */
 }
 
 table {
@@ -38,10 +88,16 @@ th, td {
   padding: 1rem 1.5rem;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
+  vertical-align: middle; /* Centra verticalmente */
+}
+
+/* Quitar el borde de la última fila */
+tbody tr:last-child td {
+  border-bottom: none;
 }
 
 thead {
-  background-color: #f8f9fa;
+  background-color: #f8f9fa; /* Fondo ligero para la cabecera */
 }
 
 th {
@@ -49,18 +105,41 @@ th {
   color: var(--text-secondary);
   font-size: 0.8rem;
   text-transform: uppercase;
+  letter-spacing: 0.5px; /* Mejor espaciado */
 }
 
+/* --- Píldoras de Rol (Las hacemos con colores) --- */
 .unit-pill {
   display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-  background-color: #e9ecef;
-  color: var(--text-secondary);
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
   font-size: 0.8rem;
-  font-weight: 500;
+  font-weight: 600;
+  background-color: #e9ecef; /* Gris por defecto */
+  color: #495057; /* Texto gris */
 }
 
+/* Estilos específicos por rol (usando 'data-role') */
+.unit-pill[data-role="admin"],
+.unit-pill[data-role="supervisor"] {
+  background-color: #fcefe2; /* Naranja muy claro */
+  color: var(--primary-color); /* Naranja oscuro */
+}
+.unit-pill[data-role="cocina"] {
+  background-color: #e7f5ff; /* Azul claro */
+  color: #1c7ed6; /* Azul oscuro */
+}
+.unit-pill[data-role="reparto"] {
+  background-color: #e6fcf5; /* Verde claro */
+  color: #0ca678; /* Verde oscuro */
+}
+.unit-pill[data-role="ensamble"] {
+  background-color: #f3e8ff; /* Morado claro */
+  color: #7048e8; /* Morado oscuro */
+}
+
+
+/* --- Botones de Acciones en la Tabla --- */
 .action-btn {
   background: none;
   border: 1px solid var(--border-color);
@@ -68,59 +147,66 @@ th {
   border-radius: 6px;
   cursor: pointer;
   margin-right: 0.5rem;
-  color: var(--text-primary);
+  color: var(--text-secondary); /* Color de texto sutil */
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 .action-btn:hover {
   background-color: #f8f9fa;
+  color: var(--text-primary);
+  border-color: #adb5bd;
 }
 
-.modal-input {
-  width: 100%;
-  padding: 0.8rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  margin-top: 0.5rem;
+/* Botón de peligro (Eliminar) */
+.action-btn-red {
+  background-color: #fff5f5; /* Fondo rojo muy claro */
+  border: 1px solid #ffb3b3;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-right: 0.5rem;
+  color: #e03131; /* Texto rojo */
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+.action-btn-red:hover {
+  background-color: #e03131; /* Fondo rojo sólido */
+  color: white; /* Texto blanco */
+  border-color: #e03131;
 }
 
-/* ... al final de frontend/src/screens/TeamManagementView.css ... */
-
+/* --- Celdas de Estado (Cargando, Error, Vacío) --- */
 .status-cell {
   text-align: center;
   padding: 3rem;
   color: var(--text-secondary);
 }
-
 .error-cell {
   color: #e74c3c;
   font-weight: 500;
 }
-.admin-toolbar {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-  align-items: center;
-  justify-content: space-between; /* 👈 para que el botón quede a la derecha */
-}
 
-.toolbar-right {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.add-user-btn {
-  background-color: #ff7a1a;
-  color: #fff;
-  border: none;
-  padding: 0.6rem 1.1rem;
+/* --- Estilos del Modal (que te di antes) --- */
+.modal-input {
+  width: 100%;
+  padding: 0.9rem;
   border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
+  border: 1px solid var(--border-color);
+  margin-top: 0.25rem;
+  box-sizing: border-box;
+  font-size: 1rem;
+  background-color: #f8f9fa;
+  transition: all 0.2s ease;
 }
-.add-user-btn:hover {
-  background-color: #ff6a00;
+.modal-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.25);
+}
+.modal-body label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
 }

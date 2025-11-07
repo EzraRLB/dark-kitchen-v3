@@ -5,6 +5,7 @@ from .views import (
     AdminTokenObtainPairView,
     TeamUserListCreateView,
     TeamUserDetailView,
+    ResetPinView,
 )
 
 urlpatterns = [
@@ -13,4 +14,9 @@ urlpatterns = [
 
     path("team/", TeamUserListCreateView.as_view(), name="team-users"),
     path("team/<int:pk>/", TeamUserDetailView.as_view(), name="team-users-detail"),
+    
+    path('team/', TeamUserListCreateView.as_view(), name='team-list-create'),
+    path('team/<int:pk>/', TeamUserDetailView.as_view(), name='team-detail'),
+
+    path('team/<int:pk>/reset-pin/', ResetPinView.as_view(), name='team-reset-pin'),
 ]
