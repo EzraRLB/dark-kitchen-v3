@@ -28,4 +28,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     # Esta línea ahora funcionará correctamente
     path('api/users/', include('users.urls')),
+    path('inventory/', include('inventory.urls')),
 ]

@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders', # Necesario para permitir la comunicación con React
-    'users', 
+    'users',
+    'inventory',
 ]
 
 CORS_ALLOWED_ORIGINS = [
