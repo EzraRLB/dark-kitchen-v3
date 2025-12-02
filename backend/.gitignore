@@ -1,0 +1,4 @@
+# Archivo: backend/.gitignore
+.env
+db.sqlite3
+__pycache__/

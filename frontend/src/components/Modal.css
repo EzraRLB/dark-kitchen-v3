@@ -1,0 +1,99 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px); /* <-- Añade un blur de fondo */
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  width: 100%;
+  max-width: 500px;
+  overflow: hidden;
+  /* Animación de entrada */
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem; /* <-- Más espacio */
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem; /* <-- Un poco más grande */
+  color: var(--text-primary);
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s; /* <-- Transición */
+}
+
+.modal-close-btn:hover {
+  color: var(--text-primary);
+  transform: scale(1.1);
+}
+
+.modal-body {
+  padding: 1.5rem;
+  display: flex; /* <-- Usamos flex */
+  flex-direction: column; /* <-- En columna */
+  gap: 1rem; /* <-- Espacio entre cada campo del formulario */
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem; /* <-- Más espacio entre botones */
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  background-color: #f8f9fa; /* <-- Fondo ligeramente gris */
+}
+
+.btn {
+  padding: 0.6rem 1.2rem; /* <-- Botones más grandes */
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600; /* <-- Letra más gruesa */
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+.btn-primary:hover {
+  transform: scale(1.03);
+  filter: brightness(1.1);
+}
+
+.btn-secondary {
+  background-color: white;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+.btn-secondary:hover {
+  background-color: #f8f9fa;
+  transform: scale(1.03);
+}

@@ -1,0 +1,157 @@
+.insumos-container {
+  padding: 2rem;
+}
+
+.insumos-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid var(--border-color);
+}
+
+.add-insumo-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.8rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.add-insumo-btn:hover {
+  transform: scale(1.03);
+  filter: brightness(1.1);
+}
+
+.table-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.table-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-container th {
+  background-color: #f8f9fa;
+  padding: 1rem 1.5rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.table-container td {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.table-container tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-container tr:hover {
+  background-color: #f8f9fa;
+}
+
+.status-cell {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+}
+
+.error-cell {
+  color: #e74c3c;
+  font-weight: 500;
+}
+
+.empty-cell {
+  color: var(--text-secondary);
+}
+
+.tipo-pill {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.tipo-pill[data-tipo="INSUMO_RECETA"] {
+  background-color: #e6fcf5;
+  color: #0ca678;
+}
+
+.tipo-pill[data-tipo="EMPAQUE"] {
+  background-color: #e7f5ff;
+  color: #1c7ed6;
+}
+
+.tipo-pill[data-tipo="CONDIMENTO_INCLUIDO"] {
+  background-color: #f3e8ff;
+  color: #7048e8;
+}
+
+.action-icon-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  padding: 0.4rem 0.8rem;
+  margin-right: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+}
+
+.edit-btn:hover {
+  background-color: #f8f9fa;
+  color: var(--text-primary);
+  border-color: #adb5bd;
+}
+
+.delete-btn {
+  background-color: #fff5f5;
+  border: 1px solid #ffb3b3;
+  color: #e03131;
+}
+
+.delete-btn:hover {
+  background-color: #e03131;
+  color: white;
+  border-color: #e03131;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  margin-top: 0.25rem;
+  box-sizing: border-box;
+  font-size: 1rem;
+  background-color: #f8f9fa;
+  transition: all 0.2s ease;
+}
+
+.modal-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.25);
+}

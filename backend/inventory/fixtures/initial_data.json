@@ -1,0 +1,68 @@
+[
+  {
+    "model": "inventory.unidadmedida",
+    "pk": 1,
+    "fields": {
+      "nombre_um": "Gramos",
+      "abreviacion_um": "g",
+      "tipo_um": "Peso",
+      "es_unidad_base": true,
+      "factor_conversion": "1.0000"
+    }
+  },
+  {
+    "model": "inventory.unidadmedida",
+    "pk": 2,
+    "fields": {
+      "nombre_um": "Kilogramos",
+      "abreviacion_um": "kg",
+      "tipo_um": "Peso",
+      "es_unidad_base": false,
+      "factor_conversion": "1000.0000"
+    }
+  },
+  {
+    "model": "inventory.unidadmedida",
+    "pk": 3,
+    "fields": {
+      "nombre_um": "Mililitros",
+      "abreviacion_um": "ml",
+      "tipo_um": "Volumen",
+      "es_unidad_base": true,
+      "factor_conversion": "1.0000"
+    }
+  },
+  {
+    "model": "inventory.unidadmedida",
+    "pk": 4,
+    "fields": {
+      "nombre_um": "Litros",
+      "abreviacion_um": "l",
+      "tipo_um": "Volumen",
+      "es_unidad_base": false,
+      "factor_conversion": "1000.0000"
+    }
+  },
+  {
+    "model": "inventory.unidadmedida",
+    "pk": 5,
+    "fields": {
+      "nombre_um": "Unidad",
+      "abreviacion_um": "u",
+      "tipo_um": "Unidad",
+      "es_unidad_base": true,
+      "factor_conversion": "1.0000"
+    }
+  },
+  {
+    "model": "inventory.unidadmedida",
+    "pk": 6,
+    "fields": {
+      "nombre_um": "Pieza",
+      "abreviacion_um": "pz",
+      "tipo_um": "Unidad",
+      "es_unidad_base": false,
+      "factor_conversion": "1.0000"
+    }
+  }
+]
