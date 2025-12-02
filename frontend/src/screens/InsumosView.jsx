@@ -3,6 +3,7 @@ import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import Modal from '../components/Modal';
+import ConfirmModal from '../components/ConfirmModal';
 import './InsumosView.css';
 
 const getAuthHeaders = () => {
@@ -53,6 +54,14 @@ export default function InsumosView() {
     tipo_articulo: 'INSUMO_RECETA',
     unidad_base_consumo: '',
     unidad_compra: ''
+  });
+
+  const [confirmModal, setConfirmModal] = useState({
+    open: false,
+    title: '',
+    message: '',
+    type: 'warning',
+    onConfirm: null
   });
 
   const fetchIngredientes = async () => {
@@ -114,7 +123,13 @@ export default function InsumosView() {
 
   const handleSaveIngrediente = async () => {
     if (!modal.nombre_ingrediente || !modal.unidad_base_consumo || !modal.unidad_compra) {
-      alert("Todos los campos son obligatorios.");
+      setConfirmModal({
+        open: true,
+        title: 'Campos Requeridos',
+        message: "Todos los campos son obligatorios.",
+        type: 'warning',
+        onConfirm: () => setConfirmModal(prev => ({ ...prev, open: false }))
+      });
       return;
     }
     try {
@@ -131,10 +146,22 @@ export default function InsumosView() {
       }
       await fetchIngredientes();
       resetModal();
-      alert(modal.isEdit ? 'Ingrediente actualizado correctamente.' : 'Ingrediente creado correctamente.');
+      setConfirmModal({
+        open: true,
+        title: 'Éxito',
+        message: modal.isEdit ? 'Ingrediente actualizado correctamente.' : 'Ingrediente creado correctamente.',
+        type: 'info',
+        onConfirm: () => setConfirmModal(prev => ({ ...prev, open: false }))
+      });
     } catch (err) {
       console.error("Error guardando ingrediente:", err);
-      alert("No se pudo guardar el ingrediente.");
+      setConfirmModal({
+        open: true,
+        title: 'Error',
+        message: "No se pudo guardar el ingrediente.",
+        type: 'danger',
+        onConfirm: () => setConfirmModal(prev => ({ ...prev, open: false }))
+      });
     }
   };
 
@@ -152,19 +179,35 @@ export default function InsumosView() {
   };
 
   const handleDelete = async (ingrediente) => {
-    const confirmed = window.confirm(
-      `¿Seguro que quieres borrar este ingrediente? Sólo hazlo de descontinuarlo completamente. Se evaluará la integridad de recetas que lo utilicen y no será posible borrarlo de ser utilizado en una.`
-    );
-    if (!confirmed) return;
-    
-    try {
-      await apiDeleteIngrediente(ingrediente.id_ingrediente);
-      await fetchIngredientes();
-      alert('Ingrediente eliminado correctamente.');
-    } catch (err) {
-      console.error("Error eliminando ingrediente:", err);
-      alert('No se pudo eliminar el ingrediente. Puede estar siendo utilizado en recetas.');
-    }
+    setConfirmModal({
+      open: true,
+      title: 'Confirmar Eliminación',
+      message: `¿Seguro que quieres borrar este ingrediente? Sólo hazlo de descontinuarlo completamente. Se evaluará la integridad de recetas que lo utilicen y no será posible borrarlo de ser utilizado en una.`,
+      type: 'danger',
+      confirmText: 'Eliminar',
+      onConfirm: async () => {
+        try {
+          await apiDeleteIngrediente(ingrediente.id_ingrediente);
+          await fetchIngredientes();
+          setConfirmModal({
+            open: true,
+            title: 'Éxito',
+            message: 'Ingrediente eliminado correctamente.',
+            type: 'info',
+            onConfirm: () => setConfirmModal(prev => ({ ...prev, open: false }))
+          });
+        } catch (err) {
+          console.error("Error eliminando ingrediente:", err);
+          setConfirmModal({
+            open: true,
+            title: 'Error',
+            message: 'No se pudo eliminar el ingrediente. Puede estar siendo utilizado en recetas.',
+            type: 'danger',
+            onConfirm: () => setConfirmModal(prev => ({ ...prev, open: false }))
+          });
+        }
+      }
+    });
   };
 
   return (
@@ -287,6 +330,16 @@ export default function InsumosView() {
           ))}
         </select>
       </Modal>
+
+      <ConfirmModal
+        open={confirmModal.open}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        confirmText={confirmModal.confirmText}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+      />
     </div>
   );
 }

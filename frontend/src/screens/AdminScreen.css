@@ -72,3 +72,47 @@
   border-radius: 8px;
   color: #6c757d;
 }
+
+.confirm-modal {
+  max-width: 450px;
+}
+
+.modal-icon {
+  margin-right: 8px;
+  font-size: 1.2em;
+}
+
+.confirm-message {
+  margin: 0;
+  line-height: 1.5;
+  color: #495057;
+}
+
+.confirm-btn.warning {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.confirm-btn.danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.confirm-btn.info {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.prompt-modal {
+  max-width: 500px;
+}
+
+.prompt-message {
+  margin: 0 0 1rem 0;
+  line-height: 1.5;
+  color: #495057;
+}
+
+.prompt-input {
+  margin-top: 0.5rem;
+}

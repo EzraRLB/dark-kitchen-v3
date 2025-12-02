@@ -27,7 +27,7 @@ const KdsScreen = ({ user, onLogout }) => {
       <header className="kds-header">
         <h1>Kitchen Display System</h1>
         <div className="user-info">
-          <span>{user.user_alies}</span>
+          <span>{user.user_alias}</span>
           <button onClick={onLogout}>Cerrar Sesión</button>
         </div>
       </header>

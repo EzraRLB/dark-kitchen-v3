@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from 'axios';
 import Modal from '../components/Modal';
+import ConfirmModal from '../components/ConfirmModal';
+import PromptModal from '../components/PromptModal';
 import './TeamManagementView.css';
 
 // ---------- Configuración ----------
@@ -94,6 +96,21 @@ export default function TeamManagementView() {
     username: '',
     user_role: 'cocina'
   });
+
+  const [confirmModal, setConfirmModal] = useState({
+    open: false,
+    title: '',
+    message: '',
+    type: 'warning',
+    onConfirm: null
+  });
+
+  const [promptModal, setPromptModal] = useState({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: null
+  });
   
   const resetAddModal = () => {
     setAddModal({
@@ -139,35 +156,53 @@ export default function TeamManagementView() {
   const handleResetPin = async (user) => {
     if (!user) return;
 
-    // 1. Pedir la contraseña del admin (igual que al borrar)
-    const adminPassword = window.prompt(
-      `🔒 ACCIÓN SEGURA 🔒\nVas a restablecer el PIN para "${user.name}".\n\nPor favor, ingresa TU PROPIA contraseña de administrador para confirmar:`
-    );
-
-    // 2. Si el admin cancela, no hacemos nada
-    if (!adminPassword) {
-      return;
-    }
-
-    // 3. Llamar a la nueva API
-    try {
-      const response = await apiResetPin(user.id, adminPassword);
-      // Mostramos el mensaje de éxito del backend
-      alert(response.data.success || "PIN restablecido y enviado.");
-    } catch (err) {
-      console.error("Error al restablecer PIN:", err);
-      // Mostramos el mensaje de error del backend
-      const msg = err?.response?.data?.error || "No se pudo restablecer el PIN.";
-      alert("Error: " + msg);
-    }
+    setPromptModal({
+      open: true,
+      title: 'Acción Segura',
+      message: `Vas a restablecer el PIN para "${user.name}".\n\nPor favor, ingresa TU PROPIA contraseña de administrador para confirmar:`,
+      onConfirm: async (adminPassword) => {
+        if (!adminPassword) {
+          setPromptModal(prev => ({ ...prev, open: false }));
+          return;
+        }
+        
+        try {
+          const response = await apiResetPin(user.id, adminPassword);
+          setPromptModal(prev => ({ ...prev, open: false }));
+          setConfirmModal({
+            open: true,
+            title: 'Éxito',
+            message: response.data.success || "PIN restablecido y enviado.",
+            type: 'info',
+            onConfirm: () => setConfirmModal(prev => ({ ...prev, open: false }))
+          });
+        } catch (err) {
+          console.error("Error al restablecer PIN:", err);
+          const msg = err?.response?.data?.error || "No se pudo restablecer el PIN.";
+          setPromptModal(prev => ({ ...prev, open: false }));
+          setConfirmModal({
+            open: true,
+            title: 'Error',
+            message: msg,
+            type: 'danger',
+            onConfirm: () => setConfirmModal(prev => ({ ...prev, open: false }))
+          });
+        }
+      }
+    });
   };
 
   // (handleSaveUnit ya no existe, lo cual es correcto)
 
   const handleCreateUser = async () => {
-    // ... (esta función se queda igual que antes) ...
     if (!addModal.email || !addModal.user_role) {
-      alert("El email y el rol son obligatorios.");
+      setConfirmModal({
+        open: true,
+        title: 'Campos Requeridos',
+        message: "El email y el rol son obligatorios.",
+        type: 'warning',
+        onConfirm: () => setConfirmModal(prev => ({ ...prev, open: false }))
+      });
       return;
     }
     try {
@@ -181,35 +216,97 @@ export default function TeamManagementView() {
       await apiCreateUser(payload);
       await fetchUsers();
       resetAddModal();
-      alert('¡Usuario creado! Se ha enviado un correo con el PIN de acceso.');
+      setConfirmModal({
+        open: true,
+        title: 'Éxito',
+        message: '¡Usuario creado! Se ha enviado un correo con el PIN de acceso.',
+        type: 'info',
+        onConfirm: () => setConfirmModal(prev => ({ ...prev, open: false }))
+      });
     } catch (err) {
       console.error("Error creando usuario:", err);
       const msg = err?.response?.data ? JSON.stringify(err.response.data, null, 2) : err.message;
-      alert("No se pudo crear el usuario:\n" + msg);
+      setConfirmModal({
+        open: true,
+        title: 'Error',
+        message: "No se pudo crear el usuario:\n" + msg,
+        type: 'danger',
+        onConfirm: () => setConfirmModal(prev => ({ ...prev, open: false }))
+      });
     }
   };
 
   const handleDeleteUser = async (user) => {
-    // ... (esta función se queda igual que antes) ...
     if (!user) return;
-    let adminPassword = null;
+    
     if (user.is_admin) {
-      adminPassword = window.prompt(
-        "⚠️ ALERTA ⚠️\nEstás a punto de eliminar a un administrador (" + user.name + ").\n\nPor favor, ingresa TU PROPIA contraseña de administrador para confirmar:"
-      );
-      if (!adminPassword) return; 
+      setPromptModal({
+        open: true,
+        title: 'Alerta - Eliminar Administrador',
+        message: `Estás a punto de eliminar a un administrador (${user.name}).\n\nPor favor, ingresa TU PROPIA contraseña de administrador para confirmar:`,
+        inputType: 'password',
+        onConfirm: async (adminPassword) => {
+          if (!adminPassword) {
+            setPromptModal(prev => ({ ...prev, open: false }));
+            return;
+          }
+          
+          try {
+            await apiDeleteUser(user.id, adminPassword);
+            setUsers(prev => prev.filter(u => u.id !== user.id));
+            setPromptModal(prev => ({ ...prev, open: false }));
+            setConfirmModal({
+              open: true,
+              title: 'Éxito',
+              message: "Usuario eliminado correctamente.",
+              type: 'info',
+              onConfirm: () => setConfirmModal(prev => ({ ...prev, open: false }))
+            });
+          } catch (err) {
+            console.error("Error borrando usuario:", err);
+            const msg = err?.response?.data?.error || "No se pudo eliminar el usuario.";
+            setPromptModal(prev => ({ ...prev, open: false }));
+            setConfirmModal({
+              open: true,
+              title: 'Error',
+              message: msg,
+              type: 'danger',
+              onConfirm: () => setConfirmModal(prev => ({ ...prev, open: false }))
+            });
+          }
+        }
+      });
     } else {
-      const ok = window.confirm(`¿Estás seguro de eliminar a "${user.name}"?`);
-      if (!ok) return;
-    }
-    try {
-      await apiDeleteUser(user.id, adminPassword);
-      setUsers(prev => prev.filter(u => u.id !== user.id));
-      alert("Usuario eliminado correctamente.");
-    } catch (err) {
-      console.error("Error borrando usuario:", err);
-      const msg = err?.response?.data?.error || "No se pudo eliminar el usuario.";
-      alert("Error: " + msg);
+      setConfirmModal({
+        open: true,
+        title: 'Confirmar Eliminación',
+        message: `¿Estás seguro de eliminar a "${user.name}"?`,
+        type: 'danger',
+        confirmText: 'Eliminar',
+        onConfirm: async () => {
+          try {
+            await apiDeleteUser(user.id);
+            setUsers(prev => prev.filter(u => u.id !== user.id));
+            setConfirmModal({
+              open: true,
+              title: 'Éxito',
+              message: "Usuario eliminado correctamente.",
+              type: 'info',
+              onConfirm: () => setConfirmModal(prev => ({ ...prev, open: false }))
+            });
+          } catch (err) {
+            console.error("Error borrando usuario:", err);
+            const msg = err?.response?.data?.error || "No se pudo eliminar el usuario.";
+            setConfirmModal({
+              open: true,
+              title: 'Error',
+              message: msg,
+              type: 'danger',
+              onConfirm: () => setConfirmModal(prev => ({ ...prev, open: false }))
+            });
+          }
+        }
+      });
     }
   };
 
@@ -333,6 +430,25 @@ export default function TeamManagementView() {
           onChange={e => setAddModal(s => ({ ...s, username: e.target.value }))}
         />
       </Modal>
+
+      <ConfirmModal
+        open={confirmModal.open}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        confirmText={confirmModal.confirmText}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+      />
+
+      <PromptModal
+        open={promptModal.open}
+        title={promptModal.title}
+        message={promptModal.message}
+        inputType={promptModal.inputType || 'password'}
+        onConfirm={promptModal.onConfirm}
+        onCancel={() => setPromptModal(prev => ({ ...prev, open: false }))}
+      />
     </div>
   );
 }

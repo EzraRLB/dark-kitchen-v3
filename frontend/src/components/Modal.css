@@ -97,3 +97,52 @@
   background-color: #f8f9fa;
   transform: scale(1.03);
 }
+
+/* Modal button styles for consistency */
+.modal-btn {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+.cancel-btn {
+  background-color: white;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+}
+
+.cancel-btn:hover {
+  background-color: #f8f9fa;
+  transform: scale(1.03);
+  border-color: #adb5bd;
+}
+
+.confirm-btn {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.confirm-btn:hover {
+  transform: scale(1.03);
+  filter: brightness(1.1);
+}
+
+.confirm-btn.warning {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.confirm-btn.danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.confirm-btn.info {
+  background-color: #17a2b8;
+  color: white;
+}
