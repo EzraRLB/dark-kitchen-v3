@@ -28,7 +28,13 @@ class AdminTokenObtainPairView(TokenObtainPairView):
 class TeamUserListCreateView(generics.ListCreateAPIView):
     queryset = User.objects.all().order_by("id")
     serializer_class = TeamUserSerializer
-    permission_classes = [permissions.IsAdminUser] 
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.user_role in ['admin', 'supervisor'] or user.is_superuser:
+            return User.objects.all().order_by("id")
+        return User.objects.none() 
 
     def perform_create(self, serializer):
         new_pin = get_random_string(length=6, allowed_chars='0123456789')
@@ -65,7 +71,13 @@ class TeamUserListCreateView(generics.ListCreateAPIView):
 class TeamUserDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = TeamUserSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.user_role in ['admin', 'supervisor'] or user.is_superuser:
+            return User.objects.all()
+        return User.objects.none()
 
     def destroy(self, request, *args, **kwargs):
         user_to_delete = self.get_object()
@@ -99,10 +111,17 @@ class ResetPinView(APIView):
     Vista para que un admin restablezca el PIN de otro usuario.
     Requiere la contraseña del admin que hace la petición.
     """
-    permission_classes = [permissions.IsAdminUser]
-
+    permission_classes = [permissions.IsAuthenticated]
+    
     def post(self, request, pk, *args, **kwargs):
         requesting_user = request.user
+        
+        if requesting_user.user_role not in ['admin', 'supervisor'] and not requesting_user.is_superuser:
+            return Response(
+                {'error': 'No tiene permisos para realizar esta acción.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         
         admin_password = request.data.get('admin_password')
 

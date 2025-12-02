@@ -1,0 +1,8 @@
+.kds-container { background-color: #1a1d21; min-height: 100vh; color: #f8f9fa; }
+.kds-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; background-color: #0c0e10; }
+.kds-header h1 { font-size: 1.5rem; }
+.user-info { display: flex; align-items: center; gap: 1rem; }
+.user-info button { background-color: #E67E22; color: white; border: none; }
+.kds-columns { display: flex; gap: 1rem; padding: 1rem; }
+.kds-column { flex: 1; background-color: #2c3036; padding: 1rem; border-radius: 8px; }
+.kds-column h2 { text-align: center; margin-bottom: 1rem; }

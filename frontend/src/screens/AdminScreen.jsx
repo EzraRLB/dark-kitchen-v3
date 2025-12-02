@@ -12,6 +12,8 @@ const AdminScreen = ({ user, onLogout }) => {
         return <TeamManagementView />;
       case 'inventory':
         return <InventoryView />;
+      case 'reports':
+        return <div className="reports-placeholder"><h3>Reportes - Próximamente</h3></div>;
       default:
         return <TeamManagementView />;
     }
@@ -22,21 +24,24 @@ const AdminScreen = ({ user, onLogout }) => {
       <aside className="sidebar">
         <h2 className="brand-title">Admin Panel</h2>
         <nav className="sidebar-nav">
-          <a 
-            href="#" 
+          <button 
             className={`nav-link ${activeTab === 'team' ? 'active' : ''}`}
-            onClick={(e) => { e.preventDefault(); setActiveTab('team'); }}
+            onClick={() => setActiveTab('team')}
           >
             Gestión de Equipo
-          </a>
-          <a 
-            href="#" 
+          </button>
+          <button 
             className={`nav-link ${activeTab === 'inventory' ? 'active' : ''}`}
-            onClick={(e) => { e.preventDefault(); setActiveTab('inventory'); }}
+            onClick={() => setActiveTab('inventory')}
           >
             Inventario
-          </a>
-          <a href="#" className="nav-link">Reportes</a>
+          </button>
+          <button 
+            className={`nav-link ${activeTab === 'reports' ? 'active' : ''}`}
+            onClick={() => setActiveTab('reports')}
+          >
+            Reportes
+          </button>
         </nav>
       </aside>
       <main className="main-content">
