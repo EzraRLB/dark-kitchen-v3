@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import TeamManagementView from './TeamManagementView';
 import InventoryView from './InventoryView';
+import ReportsView from './ReportsView'; // Importar nueva vista
 import './AdminScreen.css';
 
 const AdminScreen = ({ user, onLogout }) => {
@@ -13,7 +14,7 @@ const AdminScreen = ({ user, onLogout }) => {
       case 'inventory':
         return <InventoryView />;
       case 'reports':
-        return <div className="reports-placeholder"><h3>Reportes - Próximamente</h3></div>;
+        return <ReportsView />; // Renderizar reporte
       default:
         return <TeamManagementView />;
     }
@@ -46,7 +47,7 @@ const AdminScreen = ({ user, onLogout }) => {
       </aside>
       <main className="main-content">
         <header className="main-header">
-          <div/> {/* Spacer */}
+          <div/>
           <div className="user-menu">
             <span>{user.user_alias}</span>
             <button onClick={onLogout} className="logout-button">Cerrar Sesión</button>

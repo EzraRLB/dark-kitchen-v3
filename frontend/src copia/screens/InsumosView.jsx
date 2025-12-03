@@ -226,6 +226,7 @@ export default function InsumosView() {
               <th>Nombre</th>
               <th>Tipo de Artículo</th>
               <th>Unidad Base Consumo</th>
+              <th>Stock Actual</th>
               <th>Unidad Compra</th>
               <th>Acciones</th>
             </tr>
@@ -258,6 +259,9 @@ export default function InsumosView() {
                   </span>
                 </td>
                 <td>{ingrediente.unidad_base_consumo_nombre}</td>
+                <td style={{ fontWeight: 'bold', color: ingrediente.stock < 10 ? '#e74c3c' : '#2ecc71' }}>
+                  {parseFloat(ingrediente.stock).toLocaleString()} {ingrediente.unidad_base_consumo_nombre}
+                </td>
                 <td>{ingrediente.unidad_compra_nombre}</td>
                 <td>
                   <button 

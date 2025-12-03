@@ -1,50 +1,108 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import OrderCard from './OrderCard';
 import './KdsScreen.css';
 
-const mockOrdenes = [
-  { id: 'A101', tiempo: 5, items: ['Hamburguesa Clásica (x1)', 'Papas Fritas (x1)'], estado: 'nuevo' },
-  { id: 'A102', tiempo: 2, items: ['Ensalada César (x1)', 'Agua Mineral (x1)'], estado: 'nuevo' },
-  { id: 'B205', tiempo: 12, items: ['Pizza Pepperoni (x1)', 'Refresco Grande (x2)'], estado: 'preparando' },
-  { id: 'C301', tiempo: 18, items: ['Tacos al Pastor (x3)', 'Horchata (x1)'], estado: 'preparando' },
-];
-
 const KdsScreen = ({ user, onLogout }) => {
-  const [ordenes, setOrdenes] = useState(mockOrdenes);
+  const [ordenes, setOrdenes] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const moverOrden = (id, nuevoEstado) => {
-    setOrdenes(ordenes.map(o => o.id === id ? { ...o, estado: nuevoEstado } : o));
+  // Helper para headers
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("accessToken");
+    return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
   };
 
+  const fetchOrders = async () => {
+    try {
+      // Pedimos solo las activas con el parámetro kds=true
+      const { data } = await axios.get('http://127.0.0.1:8000/orders/api/orders/?kds=true', getAuthHeaders());
+      setOrdenes(data);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching KDS orders:", error);
+    }
+  };
+
+  // Polling: Buscar órdenes nuevas cada 5 segundos
+  useEffect(() => {
+    fetchOrders(); // Primera carga
+    const interval = setInterval(fetchOrders, 5000); // Recarga automática
+    return () => clearInterval(interval);
+  }, []);
+
+  const moverOrden = async (id, estadoActual) => {
+    let nuevoEstado = '';
+    if (estadoActual === 'nuevo') nuevoEstado = 'preparando';
+    else if (estadoActual === 'preparando') nuevoEstado = 'listo';
+    else if (estadoActual === 'listo') nuevoEstado = 'entregado';
+
+    if (!nuevoEstado) return;
+
+    // Actualización Optimista (UI primero)
+    const ordenesAnteriores = [...ordenes];
+    setOrdenes(ordenes.map(o => o.id === id ? { ...o, status: nuevoEstado } : o));
+
+    try {
+      // Actualizar en Backend
+      await axios.patch(
+        `http://127.0.0.1:8000/orders/api/orders/${id}/`, 
+        { status: nuevoEstado }, 
+        getAuthHeaders()
+      );
+      // Si es entregado, la refrescamos para que desaparezca
+      if (nuevoEstado === 'entregado') {
+        fetchOrders();
+      }
+    } catch (error) {
+      console.error("Error actualizando orden:", error);
+      // Revertir si falla
+      setOrdenes(ordenesAnteriores);
+      alert("Error de conexión al actualizar orden");
+    }
+  };
+
+  // Filtrar por columnas según el status que viene del backend
   const columnas = {
-    nuevo: ordenes.filter(o => o.estado === 'nuevo'),
-    preparando: ordenes.filter(o => o.estado === 'preparando'),
-    listo: ordenes.filter(o => o.estado === 'listo'),
+    nuevo: ordenes.filter(o => o.status === 'nuevo'),
+    preparando: ordenes.filter(o => o.status === 'preparando'),
+    listo: ordenes.filter(o => o.status === 'listo'),
   };
 
   return (
     <div className="kds-container">
       <header className="kds-header">
-        <h1>Kitchen Display System</h1>
+        <h1>Kitchen Display System <span style={{fontSize:'0.8rem', color:'#888'}}>Actualización en vivo</span></h1>
         <div className="user-info">
-          <span>{user.user_alias}</span>
+          <span>{user.user_alias} ({user.user_role})</span>
           <button onClick={onLogout}>Cerrar Sesión</button>
         </div>
       </header>
-      <main className="kds-columns">
-        <div className="kds-column">
-          <h2>Nuevos ({columnas.nuevo.length})</h2>
-          {columnas.nuevo.map(orden => <OrderCard key={orden.id} orden={orden} onNextStep={() => moverOrden(orden.id, 'preparando')} />)}
-        </div>
-        <div className="kds-column">
-          <h2>En Preparación ({columnas.preparando.length})</h2>
-          {columnas.preparando.map(orden => <OrderCard key={orden.id} orden={orden} onNextStep={() => moverOrden(orden.id, 'listo')} />)}
-        </div>
-        <div className="kds-column">
-          <h2>Listos para Recoger ({columnas.listo.length})</h2>
-          {columnas.listo.map(orden => <OrderCard key={orden.id} orden={orden} onNextStep={() => setOrdenes(ordenes.filter(o => o.id !== orden.id))} />)}
-        </div>
-      </main>
+      
+      {loading ? (
+        <div style={{color:'white', padding:'2rem', textAlign:'center'}}>Cargando órdenes...</div>
+      ) : (
+        <main className="kds-columns">
+          <div className="kds-column">
+            <h2>Nuevos ({columnas.nuevo.length})</h2>
+            {columnas.nuevo.map(orden => (
+              <OrderCard key={orden.id} orden={orden} onNextStep={() => moverOrden(orden.id, 'nuevo')} />
+            ))}
+          </div>
+          <div className="kds-column">
+            <h2>En Preparación ({columnas.preparando.length})</h2>
+            {columnas.preparando.map(orden => (
+              <OrderCard key={orden.id} orden={orden} onNextStep={() => moverOrden(orden.id, 'preparando')} />
+            ))}
+          </div>
+          <div className="kds-column">
+            <h2>Listos para Recoger ({columnas.listo.length})</h2>
+            {columnas.listo.map(orden => (
+              <OrderCard key={orden.id} orden={orden} onNextStep={() => moverOrden(orden.id, 'listo')} />
+            ))}
+          </div>
+        </main>
+      )}
     </div>
   );
 };
